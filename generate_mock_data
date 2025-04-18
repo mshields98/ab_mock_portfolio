@@ -1,0 +1,59 @@
+##Due to the proprietary nature of the data, a mock data set, resembiling the data, with randomly generated metrics has been applied to demonstrate this portfolio work. 
+
+import pandas as pd
+import numpy as np
+import random
+from datetime import datetime, timedelta
+
+np.random.seed(42)
+
+# Step 1: Simulate users
+n_users = 100
+users = []
+
+for i in range(n_users):
+    user_id = f"user_{i+1}"
+    group = np.random.choice(["control", "treatment"])  # A/B test group
+    start_date = datetime(2024, 1, 1) + timedelta(days=np.random.randint(0, 60))  # Random start
+    csat_start = np.random.randint(1, 6)
+    csat_end = csat_start + np.random.choice([-1, 0, 1])
+    csat_end = max(1, min(5, csat_end))  # Keep in 1–5 range
+
+    users.append({
+        "user_id": user_id,
+        "group": group,
+        "start_date": start_date,
+        "csat_start": csat_start,
+        "csat_end": csat_end
+    })
+
+users_df = pd.DataFrame(users)
+
+# Step 2: Expand to weekly rows (simulate 12-week program)
+rows = []
+
+for _, row in users_df.iterrows():
+    for week in range(1, 13):
+        submission = np.random.choice([0, 1], p=[0.4, 0.6]) if row["group"] == "treatment" else np.random.choice([0, 1], p=[0.6, 0.4])
+        clicks = np.random.poisson(2) if row["group"] == "treatment" else np.random.poisson(1)
+        clicks = min(clicks, 10)  # Cap outliers
+        week_date = row["start_date"] + timedelta(weeks=week - 1)
+
+        rows.append({
+            "user_id": row["user_id"],
+            "group": row["group"],
+            "week": week,
+            "date": week_date.strftime("%Y-%m-%d"),
+            "motivation_clicks": clicks,
+            "weekly_submission": submission,
+            "csat_start": row["csat_start"],
+            "csat_end": row["csat_end"],
+            "start_date": row["start_date"].strftime("%Y-%m-%d")
+        })
+
+weekly_df = pd.DataFrame(rows)
+
+# Save to CSV
+weekly_df.to_csv("mock_ab_motivation_dashboard_data.csv", index=False)
+
+weekly_df.head()

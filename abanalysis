@@ -1,0 +1,129 @@
+### Here is sample code for A/B tesing analysis 
+
+##Testing and Analysis: SUBMISSION
+from scipy.stats import ttest_ind
+
+### Use a T test to determine if there was a meaningful difference in avg weekly submissions between groups 
+group_a = weekly_df[weekly_df['group']== 'control']['weekly_submission']
+group_b = weekly_df[weekly_df['group']== 'treatment']['weekly_submission']
+
+#T test code 
+t_stat, p_value = ttest_ind(group_a, group_b, equal_var=False)
+
+# Print results
+print("T-test Results:")
+print(f"Group A mean: {group_a.mean():.2f}")
+print(f"Group B mean: {group_b.mean():.2f}")
+print(f"T-statistic: {t_stat:.3f}")
+print(f"P-value: {p_value:.4f}")
+print("Group A count:", group_a.count())
+print("Group B count:", group_b.count())
+
+
+##Testing and Analysis: ENGAGEMENT
+from scipy.stats import ttest_ind
+
+### Use a T test to determine if there was a meaningful difference in avg weekly submissions between groups 
+group_a = weekly_df[weekly_df['group']== 'control']['motivation_clicks']
+group_b = weekly_df[weekly_df['group']== 'treatment']['motivation_clicks']
+
+#T test code 
+t_stat, p_value = ttest_ind(group_a, group_b, equal_var=False)
+
+# Print results
+print("T-test Results:")
+print(f"Group A mean: {group_a.mean():.2f}")
+print(f"Group B mean: {group_b.mean():.2f}")
+print(f"T-statistic: {t_stat:.3f}")
+print(f"P-value: {p_value:.4f}")
+print("Group A count:", group_a.count())
+print("Group B count:", group_b.count())
+
+
+
+##Testing and Analysis: PAIRED CSAT INTER GROUP
+from scipy.stats import ttest_ind
+
+#PIVOT DATA for one row per subjec with columns as csat
+csat_df = weekly_df[['user_id', 'group', 'csat_start', 'csat_end']].drop_duplicates(subset='user_id')
+
+paired_df = csat_df.dropna(subset= ['csat_start', 'csat_end'])
+
+### Use a T test to determine if there was a meaningful difference in avg weekly submissions between groups 
+group_a = paired_df[paired_df['group']== 'control']
+group_b = paired_df[paired_df['group']== 'treatment']
+
+#Run Paired Tests for each group to determine if there was difference 
+t_stat_a, p_val_a = ttest_rel(group_a['csat_start'], group_a['csat_end'])
+t_stat_b, p_val_b = ttest_rel(group_b['csat_start'], group_b['csat_end'])
+
+# Print results
+print("🔍 Paired T-test Results (Within Groups)")
+
+print("\nGroup A:")
+print(f"Mean CSAT Start: {group_a['csat_start'].mean():.2f}")
+print(f"Mean CSAT End: {group_a['csat_end'].mean():.2f}")
+print(f"T-statistic: {t_stat_a:.3f}")
+print(f"P-value: {p_val_a:.4f}")
+
+print("\nGroup B:")
+print(f"Mean CSAT Start: {group_b['csat_start'].mean():.2f}")
+print(f"Mean CSAT End: {group_b['csat_end'].mean():.2f}")
+print(f"T-statistic: {t_stat_b:.3f}")
+print(f"P-value: {p_val_b:.4f}")
+
+
+##Testing and Analysis: IND BETWEEN GROUP CHANGE 
+
+##First find difference in starts and ends for each 
+clean_df= csat_df.dropna(subset = ['csat_start', 'csat_end']).copy()
+clean_df ['diff'] = clean_df['csat_end'] - clean_df['csat_start']
+
+#Split by groups 
+group_a_diff = clean_df[clean_df['group'] == 'control']['diff']
+group_b_diff = clean_df[clean_df['group'] == 'treatment']['diff']
+
+
+#RUn the T test 
+t_stat, p_val = ttest_ind(group_a_diff, group_b_diff, equal_var=False)  # Welch’s t-test
+
+#Print results
+print("📊 T-test: Difference in CSAT Change Between Groups")
+print(f"Group A mean CSAT change: {group_a_diff.mean():.2f}")
+print(f"Group B mean CSAT change: {group_b_diff.mean():.2f}")
+print(f"T-statistic: {t_stat:.3f}")
+print(f"P-value: {p_val:.4f}")
+
+
+#get the mean for each to build a bar chart 
+group_means = clean_df.groupby('group')[['csat_start', 'csat_end']].mean().reset_index()
+
+#I like to regroup for plotting
+group_means_long = pd.melt(group_means, id_vars='group', 
+                           value_vars=['csat_start', 'csat_end'],
+                           var_name='time', value_name='csat_mean')
+group_means_long['time'] = group_means_long['time'].map({'csat_start': 'Start', 'csat_end': 'End'})
+
+plt.figure(figsize=(8, 6))
+sns.barplot(data=group_means_long, x='group', y='csat_mean', hue='time', palette='pastel', edgecolor='black')
+for i, group in enumerate(group_means['group']):
+    start = group_means.loc[group_means['group'] == group, 'csat_start'].values[0]
+    end = group_means.loc[group_means['group'] == group, 'csat_end'].values[0]
+
+    x = i
+    plt.plot([x - 0.15, x + 0.15], [start, end], color='gray', linestyle='--', linewidth=2)
+
+    diff = end - start
+    plt.text(x, max(start, end) + 0.05, f"Δ {diff:.2f}", 
+             ha='center', va='bottom', fontsize=10, color='black', fontweight='bold')
+
+
+plt.title('CSAT Score Change from Start to End by Group', fontsize=16)
+plt.ylabel('Average CSAT')
+plt.xlabel('Group')
+plt.ylim([group_means_long['csat_mean'].min() - 0.5, group_means_long['csat_mean'].max() + 0.5])
+plt.legend(title='Time', loc='upper right')
+plt.tight_layout()
+plt.show()
+
+

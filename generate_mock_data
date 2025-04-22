@@ -1,14 +1,17 @@
-##Due to the proprietary nature of the data, a mock data set, resembiling the data, with randomly generated metrics has been applied to demonstrate this portfolio work. 
+### This is the code used to create a mock sample set
 
 import pandas as pd
 import numpy as np
 import random
 from datetime import datetime, timedelta
+from tabulate import tabulate 
+from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind
 
 np.random.seed(42)
 
-# Step 1: Simulate users
-n_users = 100
+# Simulate sample Users
+n_users = 200
 users = []
 
 for i in range(n_users):
@@ -29,7 +32,7 @@ for i in range(n_users):
 
 users_df = pd.DataFrame(users)
 
-# Step 2: Expand to weekly rows (simulate 12-week program)
+# Expand to weekly rows to have one for each week
 rows = []
 
 for _, row in users_df.iterrows():
@@ -53,7 +56,9 @@ for _, row in users_df.iterrows():
 
 weekly_df = pd.DataFrame(rows)
 
-# Save to CSV
+#Save to CSV
 weekly_df.to_csv("mock_ab_motivation_dashboard_data.csv", index=False)
 
+#Check Ya Self 
 weekly_df.head()
+print(weekly_df.columns)
